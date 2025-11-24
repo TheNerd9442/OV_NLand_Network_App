@@ -5,16 +5,20 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.webkit.CookieManager;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Toast;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "MainActivity";
     private static final String START_URL = "https://dielinke-ovnland.de/public_Register/login.php";
     private static final String ALLOWED_HOST = "dielinke-ovnland.de";
     
@@ -24,48 +28,70 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "onCreate started");
 
-        webView = new WebView(this);
-        setContentView(webView);
+        try {
+            webView = new WebView(this);
+            setContentView(webView);
 
-        WebSettings ws = webView.getSettings();
-        ws.setJavaScriptEnabled(true);
-        ws.setDomStorageEnabled(true);
-        ws.setDatabaseEnabled(true);
-        ws.setAllowFileAccess(false);
-        ws.setAllowContentAccess(false);
-        ws.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+            WebSettings ws = webView.getSettings();
+            ws.setJavaScriptEnabled(true);
+            ws.setDomStorageEnabled(true);
+            ws.setDatabaseEnabled(true);
+            ws.setAllowFileAccess(false);
+            ws.setAllowContentAccess(false);
+            ws.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
 
-        CookieManager cookieManager = CookieManager.getInstance();
-        cookieManager.setAcceptCookie(true);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            cookieManager.setAcceptThirdPartyCookies(webView, true);
-        }
+            CookieManager cookieManager = CookieManager.getInstance();
+            cookieManager.setAcceptCookie(true);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                cookieManager.setAcceptThirdPartyCookies(webView, true);
+            }
 
-        webView.setWebChromeClient(new WebChromeClient());
-        webView.setWebViewClient(new WebViewClient() {
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                if (url == null) return false;
-                Uri uri = Uri.parse(url);
-                String host = uri.getHost();
-                if (host != null && host.endsWith(ALLOWED_HOST)) {
-                    return false;
+            webView.setWebChromeClient(new WebChromeClient());
+            webView.setWebViewClient(new WebViewClient() {
+                @Override
+                public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                    if (url == null) return false;
+                    Uri uri = Uri.parse(url);
+                    String host = uri.getHost();
+                    if (host != null && host.endsWith(ALLOWED_HOST)) {
+                        return false;
+                    }
+                    Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                    startActivity(i);
+                    return true;
                 }
-                Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                startActivity(i);
-                return true;
-            }
 
-            @RequiresApi(api = Build.VERSION_CODES.N)
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                String url = request.getUrl().toString();
-                return shouldOverrideUrlLoading(view, url);
-            }
-        });
+                @RequiresApi(api = Build.VERSION_CODES.N)
+                @Override
+                public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                    String url = request.getUrl().toString();
+                    return shouldOverrideUrlLoading(view, url);
+                }
 
-        webView.loadUrl(START_URL);
+                @Override
+                public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                    super.onReceivedError(view, request, error);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        Log.e(TAG, "WebView error: " + error.getDescription());
+                    }
+                }
+
+                @Override
+                public void onPageFinished(WebView view, String url) {
+                    super.onPageFinished(view, url);
+                    Log.d(TAG, "Page loaded: " + url);
+                }
+            });
+
+            Log.d(TAG, "Loading URL: " + START_URL);
+            webView.loadUrl(START_URL);
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error in onCreate", e);
+            Toast.makeText(this, "Fehler beim Starten der App: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
     }
 
     @Override
@@ -75,5 +101,13 @@ public class MainActivity extends AppCompatActivity {
         } else {
             super.onBackPressed();
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (webView != null) {
+            webView.destroy();
+        }
+        super.onDestroy();
     }
 }
