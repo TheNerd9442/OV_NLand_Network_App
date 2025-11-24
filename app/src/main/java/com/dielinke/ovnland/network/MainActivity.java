@@ -38,10 +38,16 @@ public class MainActivity extends AppCompatActivity {
             ws.setJavaScriptEnabled(true);
             ws.setDomStorageEnabled(true);
             ws.setDatabaseEnabled(true);
+            
+            // Enable caching for persistent login
+            ws.setCacheMode(WebSettings.LOAD_DEFAULT);
+            
+            // Security settings
             ws.setAllowFileAccess(false);
             ws.setAllowContentAccess(false);
             ws.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
 
+            // Configure CookieManager for persistent cookies
             CookieManager cookieManager = CookieManager.getInstance();
             cookieManager.setAcceptCookie(true);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -82,6 +88,9 @@ public class MainActivity extends AppCompatActivity {
                 public void onPageFinished(WebView view, String url) {
                     super.onPageFinished(view, url);
                     Log.d(TAG, "Page loaded: " + url);
+                    
+                    // Ensure cookies are saved after page load
+                    CookieManager.getInstance().flush();
                 }
             });
 
@@ -101,6 +110,13 @@ public class MainActivity extends AppCompatActivity {
         } else {
             super.onBackPressed();
         }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Save cookies when app goes to background
+        CookieManager.getInstance().flush();
     }
 
     @Override
