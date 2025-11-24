@@ -7,7 +7,7 @@
       android:theme="@style/AppTheme"
       android:usesCleartextTraffic="false"
       android:networkSecurityConfig="@xml/network_security_config">
-      <activity android:name=".MainActivity"
+      <activity android:name="com.dielinke.ovnland.network.MainActivity"
                 android:exported="true">
           <intent-filter>
               <action android:name="android.intent.action.MAIN" />

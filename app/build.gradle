@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace 'com.linksync.app'
+    namespace 'com.dielinke.ovnland.network'
     compileSdk 33
 
     defaultConfig {
