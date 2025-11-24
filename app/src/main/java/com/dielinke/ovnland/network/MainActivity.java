@@ -17,16 +17,18 @@ import androidx.appcompat.app.AppCompatActivity;
 public class MainActivity extends AppCompatActivity {
     private static final String START_URL = "https://dielinke-ovnland.de/public_Register/login.php";
     private static final String ALLOWED_HOST = "dielinke-ovnland.de";
+    
+    private WebView webView;
 
     @SuppressLint({"SetJavaScriptEnabled", "JavascriptInterface"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        WebView webview = new WebView(this);
-        setContentView(webview);
+        webView = new WebView(this);
+        setContentView(webView);
 
-        WebSettings ws = webview.getSettings();
+        WebSettings ws = webView.getSettings();
         ws.setJavaScriptEnabled(true);
         ws.setDomStorageEnabled(true);
         ws.setDatabaseEnabled(true);
@@ -37,11 +39,11 @@ public class MainActivity extends AppCompatActivity {
         CookieManager cookieManager = CookieManager.getInstance();
         cookieManager.setAcceptCookie(true);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            cookieManager.setAcceptThirdPartyCookies(webview, true);
+            cookieManager.setAcceptThirdPartyCookies(webView, true);
         }
 
-        webview.setWebChromeClient(new WebChromeClient());
-        webview.setWebViewClient(new WebViewClient() {
+        webView.setWebChromeClient(new WebChromeClient());
+        webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 if (url == null) return false;
@@ -63,14 +65,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        webview.loadUrl(START_URL);
+        webView.loadUrl(START_URL);
     }
 
     @Override
     public void onBackPressed() {
-        WebView w = (WebView) findViewById(android.R.id.content).getRootView().findViewById(android.R.id.content);
-        if (w != null && w.canGoBack()) {
-            w.goBack();
+        if (webView != null && webView.canGoBack()) {
+            webView.goBack();
         } else {
             super.onBackPressed();
         }
