@@ -1,5 +1,5 @@
 
-name: Android Build (Debug & Release)
+name: Android Build (Auto APK Finder)
 
 on:
   push:
@@ -10,6 +10,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      ANDROID_HOME: $HOME/android-sdk
+      PATH: $HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$PATH
 
     steps:
       - name: Checkout
@@ -26,11 +29,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y wget unzip
           wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
-          mkdir -p $HOME/android-sdk/cmdline-tools
-          unzip commandlinetools-linux-9477386_latest.zip -d $HOME/android-sdk/cmdline-tools
-          mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
-          export ANDROID_HOME=$HOME/android-sdk
-          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+          mkdir -p $ANDROID_HOME/cmdline-tools
+          unzip commandlinetools-linux-9477386_latest.zip -d $ANDROID_HOME/cmdline-tools
+          mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
           yes | sdkmanager --licenses
           sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
@@ -38,27 +39,15 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build Debug & Release APK
+        run: ./gradlew assembleDebug assembleRelease
+
+      - name: Find and Upload All APKs
         run: |
-          ./gradlew assembleDebug assembleRelease
-          DEBUG_APK="app/build/outputs/apk/debug/app-debug.apk"
-          RELEASE_APK="app/build/outputs/apk/release/app-release.apk"
-          if [ ! -f "$DEBUG_APK" ]; then
-            echo "Debug APK fehlt!"
-            exit 1
-          fi
-          if [ ! -f "$RELEASE_APK" ]; then
-            echo "Release APK fehlt!"
-            exit 1
-          fi
+          mkdir -p all-apks
+          find . -type f -name "*.apk" -exec cp {} all-apks/ \;
+        shell: bash
 
-      - name: Upload Debug APK
+      - name: Upload All APKs
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
-
-      - name: Upload Release APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release-apk
-          path: app/build/outputs/apk/release/app-release.apk
+          name: all-apks
