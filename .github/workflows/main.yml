@@ -1,5 +1,5 @@
 
-name: Android Build (Debug & Release)
+name: Android Build (Debug, Release & AAB)
 
 on:
   push:
@@ -15,9 +15,6 @@ jobs:
       PATH: $HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$PATH
 
     steps:
-      - name: Install tar
-        run: apt-get update && apt-get install -y tar
-
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -29,7 +26,6 @@ jobs:
 
       - name: Install Android SDK
         run: |
-          apt-get install -y wget unzip
           wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
           mkdir -p $ANDROID_HOME/cmdline-tools
           unzip commandlinetools-linux-9477386_latest.zip -d $ANDROID_HOME/cmdline-tools
@@ -40,20 +36,17 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Build Debug & Release APK
+      - name: Build Debug, Release & AAB
         run: |
-          ./gradlew assembleDebug assembleRelease
-          DEBUG_APK="app/build/outputs/apk/debug/app-debug.apk"
-          RELEASE_APK="app/build/outputs/apk/release/app-release.apk"
-          if [ ! -f "$DEBUG_APK" ] || [ ! -f "$RELEASE_APK" ]; then
-            echo "Mindestens eine APK fehlt!"
-            exit 1
-          fi
+          ./gradlew assembleDebug assembleRelease bundleRelease
 
-      - name: Upload APKs
+      - name: Collect All APKs & AAB
+        run: |
+          mkdir -p build-artifacts
+          find . -type f \( -name "*.apk" -o -name "*.aab" \) -exec cp {} build-artifacts/ \;
+
+      - name: Upload All Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: all-apks
-          path: |
-            app/build/outputs/apk/debug/app-debug.apk
-            app/build/outputs/apk/release/app-release.apk
+          name: android-build-artifacts
+          path: build-artifacts/
