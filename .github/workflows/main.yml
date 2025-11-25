@@ -1,5 +1,5 @@
 
-name: Android Build (Auto APK Finder)
+name: Android Build (Debug & Release)
 
 on:
   push:
@@ -15,6 +15,9 @@ jobs:
       PATH: $HOME/android-sdk/cmdline-tools/latest/bin:$HOME/android-sdk/platform-tools:$PATH
 
     steps:
+      - name: Install tar
+        run: sudo apt-get update && sudo apt-get install -y tar
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -26,7 +29,6 @@ jobs:
 
       - name: Install Android SDK
         run: |
-          sudo apt-get update
           sudo apt-get install -y wget unzip
           wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
           mkdir -p $ANDROID_HOME/cmdline-tools
@@ -39,15 +41,19 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build Debug & Release APK
-        run: ./gradlew assembleDebug assembleRelease
-
-      - name: Find and Upload All APKs
         run: |
-          mkdir -p all-apks
-          find . -type f -name "*.apk" -exec cp {} all-apks/ \;
-        shell: bash
+          ./gradlew assembleDebug assembleRelease
+          DEBUG_APK="app/build/outputs/apk/debug/app-debug.apk"
+          RELEASE_APK="app/build/outputs/apk/release/app-release.apk"
+          if [ ! -f "$DEBUG_APK" ] || [ ! -f "$RELEASE_APK" ]; then
+            echo "Mindestens eine APK fehlt!"
+            exit 1
+          fi
 
-      - name: Upload All APKs
+      - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
           name: all-apks
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/outputs/apk/release/app-release.apk
