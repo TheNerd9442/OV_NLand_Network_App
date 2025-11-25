@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Install tar
-        run: sudo apt-get update && sudo apt-get install -y tar
+        run: apt-get update && apt-get install -y tar
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,7 +29,7 @@ jobs:
 
       - name: Install Android SDK
         run: |
-          sudo apt-get install -y wget unzip
+          apt-get install -y wget unzip
           wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
           mkdir -p $ANDROID_HOME/cmdline-tools
           unzip commandlinetools-linux-9477386_latest.zip -d $ANDROID_HOME/cmdline-tools
